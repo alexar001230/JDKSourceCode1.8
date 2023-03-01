@@ -431,42 +431,47 @@ public class HashMap<K, V> extends AbstractMap<K, V>
         Node<K, V> p;
         int n, i;
         //如果哈希表为空，调用resize()创建一个哈希表，并用变量n记录哈希表长度
-        if ((tab = table) == null || (n = tab.length) == 0)
+        if ((tab = table) == null || (n = tab.length) == 0) {
             n = (tab = resize()).length;
+        }
+
         /**
          * 如果指定参数hash在表中没有对应的桶，即为没有碰撞
          * Hash函数，(n - 1) & hash 计算key将被放置的槽位
          * (n - 1) & hash 本质上是hash % n，位运算更快
          */
-        if ((p = tab[i = (n - 1) & hash]) == null)
+        if ((p = tab[i = (n - 1) & hash]) == null) {
             //直接将键值对插入到map中即可
             tab[i] = newNode(hash, key, value, null);
-        else {// 桶中已经存在元素
+        } else {// 桶中已经存在元素
             Node<K, V> e;
             K k;
             // 比较桶中第一个元素(数组中的结点)的hash值相等，key相等
             if (p.hash == hash &&
-                    ((k = p.key) == key || (key != null && key.equals(k))))
+                    ((k = p.key) == key || (key != null && key.equals(k)))) {
                 // 将第一个元素赋值给e，用e来记录
                 e = p;
-                // 当前桶中无该键值对，且桶是红黑树结构，按照红黑树结构插入
-            else if (p instanceof TreeNode)
+            }
+            // 当前桶中无该键值对，且桶是红黑树结构，按照红黑树结构插入
+            else if (p instanceof TreeNode) {
                 e = ((TreeNode<K, V>) p).putTreeVal(this, tab, hash, key, value);
-                // 当前桶中无该键值对，且桶是链表结构，按照链表结构插入到尾部
+            }// 当前桶中无该键值对，且桶是链表结构，按照链表结构插入到尾部
             else {
                 for (int binCount = 0; ; ++binCount) {
                     // 遍历到链表尾部
                     if ((e = p.next) == null) {
                         p.next = newNode(hash, key, value, null);
                         // 检查链表长度是否达到阈值，达到将该槽位节点组织形式转为红黑树
-                        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                        if (binCount >= TREEIFY_THRESHOLD - 1) { // -1 for 1st
                             treeifyBin(tab, hash);
+                        }
                         break;
                     }
                     // 链表节点的<key, value>与put操作<key, value>相同时，不做重复操作，跳出循环
                     if (e.hash == hash &&
-                            ((k = e.key) == key || (key != null && key.equals(k))))
+                            ((k = e.key) == key || (key != null && key.equals(k)))) {
                         break;
+                    }
                     p = e;
                 }
             }
@@ -478,8 +483,9 @@ public class HashMap<K, V> extends AbstractMap<K, V>
                  * onlyIfAbsent为false或旧值为null时，允许替换旧值
                  * 否则无需替换
                  */
-                if (!onlyIfAbsent || oldValue == null)
+                if (!onlyIfAbsent || oldValue == null){
                     e.value = value;
+                }
                 // 访问后回调
                 afterNodeAccess(e);
                 // 返回旧值
@@ -489,8 +495,9 @@ public class HashMap<K, V> extends AbstractMap<K, V>
         // 更新结构化修改信息
         ++modCount;
         // 键值对数目超过阈值时，进行rehash
-        if (++size > threshold)
+        if (++size > threshold){
             resize();
+        }
         // 插入后回调
         afterNodeInsertion(evict);
         return null;
