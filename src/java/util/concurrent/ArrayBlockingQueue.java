@@ -157,11 +157,15 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     private void enqueue(E x) {
         // assert lock.getHoldCount() == 1;
         // assert items[putIndex] == null;
+        //队列中数组下标置为添加元素
         final Object[] items = this.items;
         items[putIndex] = x;
+        //【添加下标】自增，自增后如果队满，将【添加下标】置0
         if (++putIndex == items.length)
             putIndex = 0;
+        //队列元素个数自增
         count++;
+        //【非空】锁定条件释放
         notEmpty.signal();
     }
 
@@ -172,16 +176,22 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     private E dequeue() {
         // assert lock.getHoldCount() == 1;
         // assert items[takeIndex] != null;
+        //取出队尾元素
         final Object[] items = this.items;
         @SuppressWarnings("unchecked")
         E x = (E) items[takeIndex];
+        //队尾元素置空
         items[takeIndex] = null;
+        //【取出下标】自增，如果自增后下标值为队列容量，【取出下标】置0
         if (++takeIndex == items.length)
             takeIndex = 0;
+        //元素个数--
         count--;
         if (itrs != null)
             itrs.elementDequeued();
+        //【非满】锁定条件释放
         notFull.signal();
+        //返回取出的元素
         return x;
     }
 
@@ -345,14 +355,20 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException {@inheritDoc}
      */
     public void put(E e) throws InterruptedException {
+        //添加元素控检查
         checkNotNull(e);
+        //加重入锁
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
+            //队列中元素个数为队列的最大容量
             while (count == items.length)
+                //【非满】锁定条件等待
                 notFull.await();
+            //入队
             enqueue(e);
         } finally {
+            //重入锁释放
             lock.unlock();
         }
     }
@@ -396,13 +412,17 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     }
 
     public E take() throws InterruptedException {
+        //加重入锁（阻塞其他线程）
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
+            //如果当前队列元素个数为0，【非空】锁定条件等待
             while (count == 0)
                 notEmpty.await();
+            //出队
             return dequeue();
         } finally {
+            //重入锁释放
             lock.unlock();
         }
     }

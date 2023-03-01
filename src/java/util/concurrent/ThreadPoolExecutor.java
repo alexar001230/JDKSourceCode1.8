@@ -864,6 +864,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @return true if successful
      */
     private boolean addWorker(Runnable firstTask, boolean core) {
+        /**
+         * 1.双重循环cas使得线程池中线程数+1
+         */
         retry:
         for (;;) {
             int c = ctl.get();
@@ -888,6 +891,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             }
         }
 
+        /**
+         * 新建工作线程，并将工作线程放到工作线程队列中，同时启动工作线程
+         * 添加工作线程失败则执行 添加失败流程
+         */
         boolean workerStarted = false;
         boolean workerAdded = false;
         Worker w = null;
@@ -1309,10 +1316,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             c = ctl.get();
         }
         /**
-         * 至此，有以下两种情况：
-         * 1.当前工作线程数大于等于核心线程数
-         * 2.新建线程失败
-         * 此时会尝试将任务添加到阻塞队列 workQueue
+         * 当前工作线程数大于等于核心线程数 或者 新建线程失败
+         * 尝试将任务添加到阻塞队列 workQueue
          */
         // 若线程池处于 RUNNING 状态，将任务添加到阻塞队列 workQueue 中
         if (isRunning(c) && workQueue.offer(command)) {
@@ -1329,10 +1334,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             }
         }
         /**
-         * 至此，有以下两种情况：
-         * 1.线程池处于非运行状态，线程池不再接受新的线程
-         * 2.线程处于运行状态，但是阻塞队列已满，无法加入到阻塞队列
-         * 此时会尝试以最大线程数为限制创建新的工作线程
+         * 线程池处于非运行状态，线程池不再接受新的线程
+         * 线程处于运行状态，但是阻塞队列已满，无法加入到阻塞队列
+         * 尝试以最大线程数为限制创建新的工作线程
+         * 如果添加工作线程仍然失败，则执行拒绝策略
          */
         else if (!addWorker(command, false)) {
             // 任务进入线程池失败，执行拒绝策略
