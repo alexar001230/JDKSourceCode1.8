@@ -533,13 +533,14 @@ public class HashMap<K, V> extends AbstractMap<K, V>
                 return oldTab;
                 //如果现在容量的两倍小于MAXIMUM_CAPACITY且现在的容量大于DEFAULT_INITIAL_CAPACITY
             } else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
-                    oldCap >= DEFAULT_INITIAL_CAPACITY)
+                    oldCap >= DEFAULT_INITIAL_CAPACITY) {
                 //临界值变为原来的2倍
                 newThr = oldThr << 1;
-        } else if (oldThr > 0) //如果旧容量 <= 0，而且旧临界值 > 0
+            }
+        } else if (oldThr > 0) {//如果旧容量 <= 0，而且旧临界值 > 0
             //数组的新容量设置为老数组扩容的临界值
             newCap = oldThr;
-        else { //如果旧容量 <= 0，且旧临界值 <= 0，新容量扩充为默认初始化容量，新临界值为DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY
+        } else { //如果旧容量 <= 0，且旧临界值 <= 0，新容量扩充为默认初始化容量，新临界值为DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY
             newCap = DEFAULT_INITIAL_CAPACITY;//新数组初始容量设置为默认值
             newThr = (int) (DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);//计算默认容量下的阈值
         }

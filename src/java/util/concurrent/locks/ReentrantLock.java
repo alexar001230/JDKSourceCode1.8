@@ -127,37 +127,50 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * subclasses, but both need nonfair try for trylock method.
          */
         final boolean nonfairTryAcquire(int acquires) {
+            //获取当前线程
             final Thread current = Thread.currentThread();
+            //获取当前资源个数
             int c = getState();
-            if (c == 0) {
+            if (c == 0) {//如果资源没有被占用,cas抢占资源
                 if (compareAndSetState(0, acquires)) {
+                    //抢占资源成功,当前线程独占资源
                     setExclusiveOwnerThread(current);
                     return true;
                 }
             }
+            //如果当前线程就是独占线程
             else if (current == getExclusiveOwnerThread()) {
+                //计算总共的需要的资源数
                 int nextc = c + acquires;
-                if (nextc < 0) // overflow
+                if (nextc < 0) {// overflow
                     throw new Error("Maximum lock count exceeded");
+                }
+                //设置独占的资源个数为需要的资源数
                 setState(nextc);
                 return true;
             }
             return false;
         }
 
+        @Override
         protected final boolean tryRelease(int releases) {
+            //计算释放锁之后的个数
             int c = getState() - releases;
-            if (Thread.currentThread() != getExclusiveOwnerThread())
+            if (Thread.currentThread() != getExclusiveOwnerThread()){
                 throw new IllegalMonitorStateException();
+            }
             boolean free = false;
+            //如果锁个数为0，说明没有线程占用锁，将同步器的独占线程设置为空
             if (c == 0) {
                 free = true;
                 setExclusiveOwnerThread(null);
             }
+            //设置锁的个数为释放锁之后的个数
             setState(c);
             return free;
         }
 
+        @Override
         protected final boolean isHeldExclusively() {
             // While we must in general read state before owner,
             // we don't need to do so to check if current thread is owner
@@ -202,13 +215,18 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * Performs lock.  Try immediate barge, backing up to normal
          * acquire on failure.
          */
+
+        @Override
         final void lock() {
-            if (compareAndSetState(0, 1))
-                setExclusiveOwnerThread(Thread.currentThread());
-            else
+            if (compareAndSetState(0, 1)){//cas将state设置成1
+                setExclusiveOwnerThread(Thread.currentThread());//设置节点为独占节点
+            } else{
+                //如果cas失败,去抢锁
                 acquire(1);
+            }
         }
 
+        @Override
         protected final boolean tryAcquire(int acquires) {
             return nonfairTryAcquire(acquires);
         }
@@ -220,6 +238,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     static final class FairSync extends Sync {
         private static final long serialVersionUID = -3000897897090466540L;
 
+
+        @Override
         final void lock() {
             acquire(1);
         }
@@ -281,6 +301,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * purposes and lies dormant until the lock has been acquired,
      * at which time the lock hold count is set to one.
      */
+    @Override
     public void lock() {
         sync.lock();
     }
@@ -331,6 +352,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * @throws InterruptedException if the current thread is interrupted
      */
+    @Override
     public void lockInterruptibly() throws InterruptedException {
         sync.acquireInterruptibly(1);
     }
@@ -361,6 +383,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *         current thread, or the lock was already held by the current
      *         thread; and {@code false} otherwise
      */
+
+    @Override
     public boolean tryLock() {
         return sync.nonfairTryAcquire(1);
     }
@@ -453,6 +477,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @throws IllegalMonitorStateException if the current thread does not
      *         hold this lock
      */
+    @Override
     public void unlock() {
         sync.release(1);
     }
