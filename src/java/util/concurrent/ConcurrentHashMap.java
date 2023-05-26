@@ -429,6 +429,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      *
      * @throws NullPointerException if the specified key is null
      */
+    @Override
     public V get(Object key) {
         Node<K, V>[] tab;
         Node<K, V> e, p;
@@ -440,15 +441,18 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 (e = tabAt(tab, (n - 1) & h)) != null) {
             // 搜索到的节点key与传入的key相同且不为null,直接返回这个节点
             if ((eh = e.hash) == h) {
-                if ((ek = e.key) == key || (ek != null && key.equals(ek)))
+                if ((ek = e.key) == key || (ek != null && key.equals(ek))){
                     return e.val;
-            } else if (eh < 0)//如果eh<0 说明这个节点在树上 直接寻找
+                }
+            } else if (eh < 0){//如果eh<0 说明这个节点在树上 直接寻找
                 return (p = e.find(h, key)) != null ? p.val : null;
+            }
             //否则遍历链表 找到对应的值并返回
             while ((e = e.next) != null) {
                 if (e.hash == h &&
-                        ((ek = e.key) == key || (ek != null && key.equals(ek))))
+                        ((ek = e.key) == key || (ek != null && key.equals(ek)))){
                     return e.val;
+                }
             }
         }
         return null;
@@ -463,6 +467,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * {@code equals} method; {@code false} otherwise
      * @throws NullPointerException if the specified key is null
      */
+    @Override
     public boolean containsKey(Object key) {
         //直接调用get(int key)方法即可，如果有返回值，则说明是包含key的
         return get(key) != null;
@@ -477,16 +482,19 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * specified value
      * @throws NullPointerException if the specified value is null
      */
+    @Override
     public boolean containsValue(Object value) {
-        if (value == null)
+        if (value == null){
             throw new NullPointerException();
+        }
         Node<K, V>[] t;
         if ((t = table) != null) {
             Traverser<K, V> it = new Traverser<K, V>(t, t.length, 0, t.length);
             for (Node<K, V> p; (p = it.advance()) != null; ) {
                 V v;
-                if ((v = p.val) == value || (v != null && value.equals(v)))
+                if ((v = p.val) == value || (v != null && value.equals(v))){
                     return true;
+                }
             }
         }
         return false;
@@ -501,6 +509,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * {@code null} if there was no mapping for {@code key}
      * @throws NullPointerException if the specified key or value is null
      */
+    @Override
     public V put(K key, V value) {
         return putVal(key, value, false);
     }
@@ -527,8 +536,8 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         int hash = spread(key.hashCode());//两次hash，减少hash冲突，可以均匀分布
         int binCount = 0;//i处结点标志，0: 未加入新结点, 2: TreeBin或链表结点数, 其它：链表结点数。主要用于每次加入结点后查看是否要由链表转为红黑树
         for (Node<K, V>[] tab = table; ; ) {//CAS经典写法，不成功无限重试
-            Node<K, V> f;
-            int n, i, fh;
+            Node<K, V> f;//声明槽位首节点
+            int n, i, fh;//fh为槽位首节点哈希值
             //检查是否初始化了，如果没有，则初始化
             if (tab == null || (n = tab.length) == 0) {
                 tab = initTable();
@@ -549,7 +558,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 tab = helpTransfer(tab, f);
             } else {//table[i]的节点的hash值不等于MOVED。
                 V oldVal = null;
-                // 针对首个节点进行加锁操作，而不是segment，进一步减少线程冲突
+                // 针对首个节点进行加锁操作，进一步减少线程冲突
                 synchronized (f) {
                     if (tabAt(tab, i) == f) {
                         if (fh >= 0) {
@@ -1741,6 +1750,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
             super(RESERVED, null, null, null);
         }
 
+        @Override
         Node<K, V> find(int h, Object k) {
             return null;
         }
@@ -1763,9 +1773,9 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         Node<K, V>[] tab;
         int sc;
         while ((tab = table) == null || tab.length == 0) {
-            if ((sc = sizeCtl) < 0)
+            if ((sc = sizeCtl) < 0) {
                 Thread.yield(); // lost initialization race; just spin
-            else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {
+            } else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {
                 try {
                     if ((tab = table) == null || tab.length == 0) {
                         int n = (sc > 0) ? sc : DEFAULT_CAPACITY;
@@ -1894,21 +1904,24 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                         sizeCtl = sc;
                     }
                 }
-            } else if (c <= sc || n >= MAXIMUM_CAPACITY)
+            } else if (c <= sc || n >= MAXIMUM_CAPACITY) {
                 break;
-            else if (tab == table) {
+            } else if (tab == table) {
                 int rs = resizeStamp(n);
                 if (sc < 0) {
                     Node<K, V>[] nt;
                     if ((sc >>> RESIZE_STAMP_SHIFT) != rs || sc == rs + 1 ||
                             sc == rs + MAX_RESIZERS || (nt = nextTable) == null ||
-                            transferIndex <= 0)
+                            transferIndex <= 0) {
                         break;
-                    if (U.compareAndSwapInt(this, SIZECTL, sc, sc + 1))
+                    }
+                    if (U.compareAndSwapInt(this, SIZECTL, sc, sc + 1)) {
                         transfer(tab, nt);
+                    }
                 } else if (U.compareAndSwapInt(this, SIZECTL, sc,
-                        (rs << RESIZE_STAMP_SHIFT) + 2))
+                        (rs << RESIZE_STAMP_SHIFT) + 2)) {
                     transfer(tab, null);
+                }
             }
         }
     }
